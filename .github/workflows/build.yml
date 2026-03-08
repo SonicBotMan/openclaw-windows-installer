@@ -60,7 +60,16 @@ jobs:
         run: |
           cd config-tool
           npm install
+          # Build frontend first (required for tauri::generate_context!)
           npm run build
+          # Verify dist exists
+          if (-not (Test-Path "dist")) {
+            Write-Host "Creating empty dist directory"
+            New-Item -ItemType Directory -Path "dist" -Force
+            # Create a minimal index.html
+            '<!DOCTYPE html><html><head><title>OpenClaw Config</title></head><body><div id="app"></div></body></html>' | Out-File -FilePath "dist\index.html" -Encoding utf8
+          }
+          Get-ChildItem -Path "dist" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
           cd src-tauri
           cargo build --release
           Write-Host "=== Listing target/release contents ==="
