@@ -49,7 +49,7 @@
       },
       "resources": [],
       "shortDescription": "OpenClaw 配置工具",
-      "targets": "nsis",
+      "targets": ["nsis"],
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
