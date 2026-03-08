@@ -56,9 +56,12 @@ jobs:
           npm init -y
           npm install openclaw@${{ env.OPENCLAW_VERSION }} --production
 
-      - name: Build Config Tool (Rust only)
+      - name: Build Config Tool
         run: |
-          cd config-tool/src-tauri
+          cd config-tool
+          npm install
+          npm run build
+          cd src-tauri
           cargo build --release
           Write-Host "=== Listing target/release contents ==="
           Get-ChildItem -Path "target\release" -Filter "*.exe" | ForEach-Object { Write-Host "  $($_.Name)" }
