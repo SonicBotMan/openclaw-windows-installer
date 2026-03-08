@@ -1,0 +1,10 @@
+node_modules/
+dist/
+target/
+temp/
+*.log
+*.zip
+output/
+.DS_Store
+Thumbs.db
+*.bak
