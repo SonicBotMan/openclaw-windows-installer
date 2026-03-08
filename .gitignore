@@ -8,3 +8,11 @@ output/
 .DS_Store
 Thumbs.db
 *.bak
+
+# 保留目录结构但排除内容
+bundled/nodejs/*
+!bundled/nodejs/.gitkeep
+bundled/openclaw/*
+!bundled/openclaw/.gitkeep
+bundled/output/*
+!bundled/output/.gitkeep
