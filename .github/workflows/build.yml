@@ -91,12 +91,29 @@ jobs:
           Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile is.exe
           Start-Process -FilePath is.exe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
 
+      - name: Verify bundled directory
+        run: |
+          Write-Host "=== bundled directory structure ==="
+          Get-ChildItem -Path "bundled" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
+          Write-Host "=== Checking node.exe ==="
+          if (Test-Path "bundled\nodejs\node.exe") {
+            Write-Host "FOUND: bundled\nodejs\node.exe"
+            Get-Item "bundled\nodejs\node.exe" | Select-Object Name, Length
+          } else {
+            Write-Error "NOT FOUND: bundled\nodejs\node.exe"
+            exit 1
+          }
+          Write-Host "=== Checking openclaw ==="
+          if (Test-Path "bundled\openclaw\node_modules\openclaw") {
+            Write-Host "FOUND: bundled\openclaw\node_modules\openclaw"
+          } else {
+            Write-Error "NOT FOUND: bundled\openclaw\node_modules\openclaw"
+            exit 1
+          }
+
       - name: Build Installer
         run: |
           $env:PATH = "C:\Program Files (x86)\Inno Setup 6;$env:PATH"
-          # Verify exe exists before building installer
-          Write-Host "=== Verifying bundled files ==="
-          Get-ChildItem -Path "bundled" -File | ForEach-Object { Write-Host "  $($_.Name) - $($_.Length) bytes" }
           iscc installer/setup.iss
 
       - name: Upload Artifact
