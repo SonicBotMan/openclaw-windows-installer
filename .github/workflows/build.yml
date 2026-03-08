@@ -64,25 +64,30 @@ jobs:
           cd config-tool
           npm install
           npm run tauri build -- --release
-          # Tauri 1.x 可能将 exe 移动到 bundle 目录，需要从多个可能位置查找
+          # Debug: List all exe files in target directory
+          Write-Host "=== All exe files in src-tauri/target ==="
+          Get-ChildItem -Path "src-tauri\target" -Filter "*.exe" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
+          # Find the main exe (openclaw-config.exe)
+          $exePath = $null
           if (Test-Path "src-tauri\target\release\openclaw-config.exe") {
-            Copy-Item "src-tauri\target\release\openclaw-config.exe" "..\bundled\" -Force
-          } elseif (Test-Path "src-tauri\target\release\bundle\nsis\OpenClaw Config_1.0.0_x64-setup.exe") {
-            # 如果只有安装包，提取其中的 exe（备用方案：直接使用安装包）
-            Write-Host "Note: Using NSIS installer instead of standalone exe"
-            Copy-Item "src-tauri\target\release\bundle\nsis\OpenClaw Config_1.0.0_x64-setup.exe" "..\bundled\openclaw-config-installer.exe" -Force
+            $exePath = "src-tauri\target\release\openclaw-config.exe"
           } else {
-            # 搜索所有可能的 exe 文件
-            $exeFiles = Get-ChildItem -Path "src-tauri\target" -Filter "*.exe" -Recurse | Where-Object { $_.Name -like "*openclaw*" -or $_.Name -like "*config*" }
-            if ($exeFiles) {
-              Write-Host "Found exe files:"
-              $exeFiles | ForEach-Object { Write-Host "  $($_.FullName)" }
-              Copy-Item $exeFiles[0].FullName "..\bundled\openclaw-config.exe" -Force
-            } else {
-              Write-Error "No exe file found!"
-              exit 1
+            # Search for it
+            $found = Get-ChildItem -Path "src-tauri\target\release" -Filter "openclaw-config.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) {
+              $exePath = $found.FullName
             }
           }
+          if ($exePath) {
+            Write-Host "Found config tool exe: $exePath"
+            Copy-Item $exePath "..\bundled\openclaw-config.exe" -Force
+            Write-Host "Copied to ..\bundled\openclaw-config.exe"
+          } else {
+            Write-Host "WARNING: openclaw-config.exe not found, installer will skip config tool"
+          }
+          # Verify bundled directory contents
+          Write-Host "=== bundled directory contents ==="
+          Get-ChildItem -Path "..\bundled" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
 
       - name: Download Inno Setup
         run: |

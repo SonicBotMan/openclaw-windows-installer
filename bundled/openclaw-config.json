@@ -1,37 +1,16 @@
 {
-  "$schema": "./node_modules/openclaw/schema.json",
-  "version": "2026.3.7",
-  "providers": {
-    "zai": {
-      "type": "zai",
-      "apiKey": "{{ZAI_API_KEY}}",
-      "baseUrl": "https://open.bigmodel.cn/api/paas/v4"
-    },
-    "minimax": {
-      "type": "minimax",
-      "apiKey": "{{MINIMAX_API_KEY}}",
-      "baseUrl": "https://api.minimax.chat/v1"
-    }
-  },
+  "model": "zai/glm-5",
   "agents": {
-    "defaults": {
-      "model": "zai/glm-4-flash",
-      "fallbacks": ["minimax/MiniMax-M2.5-highspeed"]
+    "default": {
+      "model": "zai/glm-5"
     }
   },
-  "gateway": {
-    "port": 18789,
-    "bind": "127.0.0.1",
-    "auth": {
-      "enabled": false
+  "llm": {
+    "zai": {
+      "apiKey": ""
+    },
+    "minimax-portal": {
+      "apiKey": ""
     }
-  },
-  "memory": {
-    "backend": "qmd",
-    "path": "./memory"
-  },
-  "logging": {
-    "level": "info",
-    "path": "./logs"
   }
 }
