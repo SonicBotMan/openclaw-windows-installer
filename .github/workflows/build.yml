@@ -1,0 +1,99 @@
+name: Build Windows Installer
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '22.12.0'
+  OPENCLAW_VERSION: '2026.3.7'
+
+jobs:
+  build:
+      runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+                - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            config-tool/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Download Node.js Portable
+        run: |
+          $NodeUrl = "https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-win-x64.zip"
+                    Invoke-WebRequest -Uri $NodeUrl -OutFile node.zip
+          Expand-Archive -Path node.zip -DestinationPath temp
+          Move-Item "temp\node-v${{ env.NODE_VERSION }}-win-x64" "bundled\nodejs"
+          Remove-Item node.zip, temp -Recurse -Force
+
+      - name: Install OpenClaw
+        run: |
+          cd bundled/openclaw
+          npm init -y
+          npm install openclaw@${{ env.OPENCLAW_VERSION }} --production
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@1.5
+
+      - name: Build Config Tool
+              run: |
+          cd config-tool
+          npm install
+          npm run tauri build -- --release
+          Copy-Item "src-tauri\target\release\openclaw-config.exe" "..\bundled\" -Force
+
+      - name: Download Inno Setup
+        run: |
+          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile is.exe
+          Start-Process -FilePath is.exe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+
+      - name: Build Installer
+        run: |
+          $env:PATH = "C:\Program Files (x86)\Inno Setup 6;$env:PATH"
+          iscc installer/setup.iss
+                - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openclaw-installer
+          path: output/*.exe
+          retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Download Artifact
+              uses: actions/download-artifact@v4
+        with:
+          name: openclaw-installer
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./artifacts/*.exe
+          generate_release_notes: true
