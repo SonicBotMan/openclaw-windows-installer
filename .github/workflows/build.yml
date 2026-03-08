@@ -46,9 +46,11 @@ jobs:
         run: |
           $NodeUrl = "https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-win-x64.zip"
           Invoke-WebRequest -Uri $NodeUrl -OutFile node.zip
-          Expand-Archive -Path node.zip -DestinationPath temp
-          Move-Item "temp\node-v${{ env.NODE_VERSION }}-win-x64" "bundled\nodejs"
-          Remove-Item node.zip, temp -Recurse -Force
+          Expand-Archive -Path node.zip -DestinationPath bundled\nodejs
+          # Move contents from subfolder to parent
+          Move-Item "bundled\nodejs\node-v${{ env.NODE_VERSION }}-win-x64\*" "bundled\nodejs\" -Force
+          Remove-Item "bundled\nodejs\node-v${{ env.NODE_VERSION }}-win-x64" -Recurse -Force
+          Remove-Item node.zip -Force
 
       - name: Install OpenClaw
         run: |
