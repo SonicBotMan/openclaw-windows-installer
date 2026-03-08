@@ -6,7 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "OpenClaw 配置",
+    "productName": "OpenClaw Config",
     "version": "1.0.0"
   },
   "tauri": {
@@ -49,7 +49,7 @@
       },
       "resources": [],
       "shortDescription": "OpenClaw 配置工具",
-      "targets": "msi",
+      "targets": "nsis",
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
@@ -67,7 +67,7 @@
         "fullscreen": false,
         "height": 700,
         "resizable": true,
-        "title": "OpenClaw 配置",
+        "title": "OpenClaw Config",
         "width": 650,
         "minWidth": 600,
         "minHeight": 600,
