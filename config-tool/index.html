@@ -5,221 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenClaw 配置</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
+      min-height: 100vh; padding: 20px;
     }
-    
     .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
+      max-width: 600px; margin: 0 auto; background: white;
+      border-radius: 16px; padding: 30px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    
-    .header h1 {
-      color: #333;
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-    
-    .header p {
-      color: #666;
-      font-size: 14px;
-    }
-    
+    .header { text-align: center; margin-bottom: 30px; }
+    .header h1 { color: #333; font-size: 28px; margin-bottom: 8px; }
+    .header p { color: #666; font-size: 14px; }
     .status {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; padding: 12px; border-radius: 8px; margin-bottom: 20px;
     }
-    
-    .status.running {
-      background: #d4edda;
-      color: #155724;
-    }
-    
-    .status.stopped {
-      background: #f8d7da;
-      color: #721c24;
-    }
-    
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-    
-    .status.running .status-dot {
-      background: #28a745;
-      animation: pulse 2s infinite;
-    }
-    
-    .status.stopped .status-dot {
-      background: #dc3545;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    
-    .section {
-      margin-bottom: 25px;
-    }
-    
-    .section h2 {
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 15px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #eee;
-    }
-    
-    .form-group {
-      margin-bottom: 15px;
-    }
-    
-    .form-group label {
-      display: block;
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 6px;
-    }
-    
+    .status.running { background: #d4edda; color: #155724; }
+    .status.stopped { background: #f8d7da; color: #721c24; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .status.running .status-dot { background: #28a745; animation: pulse 2s infinite; }
+    .status.stopped .status-dot { background: #dc3545; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .section { margin-bottom: 25px; }
+    .section h2 { font-size: 16px; color: #333; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #eee; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; }
     .form-group input, .form-group select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: border-color 0.2s;
+      width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0;
+      border-radius: 8px; font-size: 14px; transition: border-color 0.2s;
     }
-    
-    .form-group input:focus, .form-group select:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    
-    .form-group input[type="password"] {
-      font-family: monospace;
-    }
-    
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-    
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 25px;
-    }
-    
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .btn-group { display: flex; gap: 10px; margin-top: 25px; }
     .btn {
-      flex: 1;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+      flex: 1; padding: 12px 20px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-    }
-    
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-    }
-    
-    .btn-secondary:hover {
-      background: #e0e0e0;
-    }
-    
-    .btn-danger {
-      background: #dc3545;
-      color: white;
-    }
-    
-    .btn-danger:hover {
-      background: #c82333;
-    }
-    
-    .btn-success {
-      background: #28a745;
-      color: white;
-    }
-    
-    .btn-success:hover {
-      background: #218838;
-    }
-    
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-success { background: #28a745; color: white; }
     .toast {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      padding: 15px 25px;
-      border-radius: 8px;
-      color: white;
-      font-size: 14px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.3s;
-      z-index: 1000;
+      position: fixed; bottom: 30px; right: 30px; padding: 15px 25px;
+      border-radius: 8px; color: white; font-size: 14px;
+      opacity: 0; transform: translateY(20px); transition: all 0.3s; z-index: 1000;
     }
-    
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    
-    .toast.success {
-      background: #28a745;
-    }
-    
-    .toast.error {
-      background: #dc3545;
-    }
-    
-    .link {
-      color: #667eea;
-      text-decoration: none;
-      font-size: 12px;
-    }
-    
-    .link:hover {
-      text-decoration: underline;
-    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+    .link { color: #667eea; text-decoration: none; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -242,9 +81,7 @@
           <select id="defaultModel">
             <option value="zai/glm-4-flash">GLM-4-Flash (智谱)</option>
             <option value="zai/glm-4">GLM-4 (智谱)</option>
-            <option value="zai/glm-4-plus">GLM-4-Plus (智谱)</option>
             <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5 (高速)</option>
-            <option value="minimax/MiniMax-M2.5">MiniMax-M2.5 (标准)</option>
           </select>
         </div>
         <div class="form-group">
@@ -252,7 +89,7 @@
           <select id="fallbackModel">
             <option value="">无</option>
             <option value="zai/glm-4-flash">GLM-4-Flash</option>
-            <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5 (高速)</option>
+            <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5</option>
           </select>
         </div>
       </div>
@@ -263,7 +100,6 @@
       <div class="form-group">
         <label>API Key</label>
         <input type="password" id="zaiApiKey" placeholder="请输入智谱 API Key">
-        <a href="https://open.bigmodel.cn" class="link" target="_blank">获取密钥 →</a>
       </div>
       <div class="form-group">
         <label>API 地址</label>
@@ -276,7 +112,6 @@
       <div class="form-group">
         <label>API Key</label>
         <input type="password" id="minimaxApiKey" placeholder="请输入 MiniMax API Key">
-        <a href="https://www.minimax.io" class="link" target="_blank">获取密钥 →</a>
       </div>
       <div class="form-group">
         <label>API 地址</label>
@@ -312,12 +147,18 @@
   <div id="toast" class="toast"></div>
   
   <script>
-    const { invoke } = window.__TAURI__.tauri;
+    // Tauri invoke 包装器
+    function tauriInvoke(cmd, args) {
+      if (!window.__TAURI__ || !window.__TAURI__.tauri) {
+        return Promise.reject(new Error('Tauri API 未初始化，请在 Tauri 应用中使用'));
+      }
+      return window.__TAURI__.tauri.invoke(cmd, args);
+    }
     
     // 加载配置
     async function loadConfig() {
       try {
-        const config = await invoke('get_config');
+        const config = await tauriInvoke('get_config');
         document.getElementById('zaiApiKey').value = config.providers?.zai?.apiKey || '';
         document.getElementById('zaiBaseUrl').value = config.providers?.zai?.baseUrl || 'https://open.bigmodel.cn/api/paas/v4';
         document.getElementById('minimaxApiKey').value = config.providers?.minimax?.apiKey || '';
@@ -359,7 +200,7 @@
       };
       
       try {
-        await invoke('save_config', { config });
+        await tauriInvoke('save_config', { config });
         showToast('配置已保存 ✓', 'success');
       } catch (e) {
         showToast('保存失败: ' + e, 'error');
@@ -369,7 +210,7 @@
     // 检查服务状态
     async function checkStatus() {
       try {
-        const running = await invoke('is_running');
+        const running = await tauriInvoke('is_running');
         const statusEl = document.getElementById('status');
         const statusText = document.getElementById('status-text');
         
@@ -392,7 +233,7 @@
     // 启动服务
     async function startService() {
       try {
-        await invoke('start_service');
+        await tauriInvoke('start_service');
         showToast('服务已启动 ✓', 'success');
         setTimeout(checkStatus, 2000);
       } catch (e) {
@@ -403,7 +244,7 @@
     // 停止服务
     async function stopService() {
       try {
-        await invoke('stop_service');
+        await tauriInvoke('stop_service');
         showToast('服务已停止', 'success');
         setTimeout(checkStatus, 1000);
       } catch (e) {
@@ -426,9 +267,11 @@
     }
     
     // 初始化
-    loadConfig();
-    checkStatus();
-    setInterval(checkStatus, 10000);
+    window.addEventListener('DOMContentLoaded', () => {
+      loadConfig();
+      checkStatus();
+      setInterval(checkStatus, 10000);
+    });
   </script>
 </body>
 </html>
