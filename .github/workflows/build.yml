@@ -63,31 +63,22 @@ jobs:
         run: |
           cd config-tool
           npm install
+          # First build the exe with cargo (tauri build may remove it)
+          cd src-tauri
+          cargo build --release
+          # Copy the exe to bundled directory BEFORE tauri build (which may delete it)
+          Copy-Item "target\release\openclaw-config.exe" "..\..\bundled\openclaw-config.exe" -Force
+          Write-Host "Copied config tool to bundled directory"
+          cd ..
+          # Now build the NSIS installer (optional, for standalone distribution)
           npm run tauri build -- --release
-          # Debug: List all exe files in target directory
-          Write-Host "=== All exe files in src-tauri/target ==="
-          Get-ChildItem -Path "src-tauri\target" -Filter "*.exe" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
-          # Find the main exe (openclaw-config.exe)
-          $exePath = $null
-          if (Test-Path "src-tauri\target\release\openclaw-config.exe") {
-            $exePath = "src-tauri\target\release\openclaw-config.exe"
+          # Verify the exe exists
+          if (Test-Path "..\bundled\openclaw-config.exe") {
+            Write-Host "Config tool exe verified at bundled\openclaw-config.exe"
           } else {
-            # Search for it
-            $found = Get-ChildItem -Path "src-tauri\target\release" -Filter "openclaw-config.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) {
-              $exePath = $found.FullName
-            }
+            Write-Error "Config tool exe missing!"
+            exit 1
           }
-          if ($exePath) {
-            Write-Host "Found config tool exe: $exePath"
-            Copy-Item $exePath "..\bundled\openclaw-config.exe" -Force
-            Write-Host "Copied to ..\bundled\openclaw-config.exe"
-          } else {
-            Write-Host "WARNING: openclaw-config.exe not found, installer will skip config tool"
-          }
-          # Verify bundled directory contents
-          Write-Host "=== bundled directory contents ==="
-          Get-ChildItem -Path "..\bundled" -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
 
       - name: Download Inno Setup
         run: |

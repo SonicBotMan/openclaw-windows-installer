@@ -34,8 +34,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "..\bundled\nodejs\*"; DestDir: "{app}\nodejs"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; OpenClaw app
 Source: "..\bundled\openclaw\*"; DestDir: "{app}\openclaw"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Config tool exe - try multiple locations
-Source: "..\bundled\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Check: FileExists(ExpandConstant('..\bundled\{#MyAppExeName}'))
+; Config tool exe
+Source: "..\bundled\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 ; Start/stop scripts
 Source: "..\bundled\start-openclaw.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bundled\stop-openclaw.bat"; DestDir: "{app}"; Flags: ignoreversion
