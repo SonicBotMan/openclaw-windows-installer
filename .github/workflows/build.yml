@@ -56,27 +56,21 @@ jobs:
           npm init -y
           npm install openclaw@${{ env.OPENCLAW_VERSION }} --production
 
-      - name: Install Tauri CLI
-        run: npm install -g @tauri-apps/cli@1.5
-
-      - name: Build Config Tool
+      - name: Build Config Tool (Rust only)
         run: |
-          cd config-tool
-          npm install
-          # First build the exe with cargo (tauri build may remove it)
-          cd src-tauri
+          cd config-tool/src-tauri
           cargo build --release
-          # Copy the exe to bundled directory BEFORE tauri build (which may delete it)
-          Copy-Item "target\release\openclaw-config.exe" "..\..\bundled\openclaw-config.exe" -Force
-          Write-Host "Copied config tool to bundled directory"
-          cd ..
-          # Now build the NSIS installer (optional, for standalone distribution)
-          npm run tauri build -- --release
-          # Verify the exe exists
-          if (Test-Path "..\bundled\openclaw-config.exe") {
-            Write-Host "Config tool exe verified at bundled\openclaw-config.exe"
+          Write-Host "=== Listing target/release contents ==="
+          Get-ChildItem -Path "target\release" -Filter "*.exe" | ForEach-Object { Write-Host "  $($_.Name)" }
+          # Copy to bundled
+          $exePath = "target\release\openclaw-config.exe"
+          if (Test-Path $exePath) {
+            Copy-Item $exePath "..\..\bundled\openclaw-config.exe" -Force
+            Write-Host "SUCCESS: Copied to bundled\openclaw-config.exe"
+            # Verify
+            Get-Item "..\..\bundled\openclaw-config.exe" | Select-Object Name, Length
           } else {
-            Write-Error "Config tool exe missing!"
+            Write-Error "EXE not found at $exePath"
             exit 1
           }
 
@@ -88,6 +82,9 @@ jobs:
       - name: Build Installer
         run: |
           $env:PATH = "C:\Program Files (x86)\Inno Setup 6;$env:PATH"
+          # Verify exe exists before building installer
+          Write-Host "=== Verifying bundled files ==="
+          Get-ChildItem -Path "bundled" -File | ForEach-Object { Write-Host "  $($_.Name) - $($_.Length) bytes" }
           iscc installer/setup.iss
 
       - name: Upload Artifact
