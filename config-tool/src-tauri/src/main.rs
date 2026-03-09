@@ -5,26 +5,15 @@ use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use tauri::Manager;
 
 /// 获取配置文件路径
-/// 优先级：用户目录 > 安装目录
-fn get_config_path(app_handle: &tauri::AppHandle) -> PathBuf {
+fn get_config_path() -> PathBuf {
     // 用户目录（最常用）
     if let Some(home) = dirs::home_dir() {
         let user_path = home.join(".openclaw").join("openclaw.json");
         if user_path.exists() {
             log::info!("使用用户配置: {:?}", user_path);
             return user_path;
-        }
-    }
-    
-    // 安装目录
-    if let Some(resource_dir) = app_handle.path_resolver().resource_dir() {
-        let install_path = resource_dir.join("openclaw").join("openclaw.json");
-        if install_path.exists() {
-            log::info!("使用安装目录配置: {:?}", install_path);
-            return install_path;
         }
     }
     
@@ -37,19 +26,10 @@ fn get_config_path(app_handle: &tauri::AppHandle) -> PathBuf {
     default_path
 }
 
-/// 获取应用目录
-fn get_app_dir(app_handle: &tauri::AppHandle) -> PathBuf {
-    if let Some(resource_dir) = app_handle.path_resolver().resource_dir() {
-        resource_dir.join("openclaw")
-    } else {
-        PathBuf::from(".")
-    }
-}
-
 /// 获取配置
 #[tauri::command]
-fn get_config(app_handle: tauri::AppHandle) -> Result<Value, String> {
-    let config_path = get_config_path(&app_handle);
+fn get_config() -> Result<Value, String> {
+    let config_path = get_config_path();
     
     if !config_path.exists() {
         log::warn!("配置文件不存在: {:?}", config_path);
@@ -98,8 +78,8 @@ fn get_config(app_handle: tauri::AppHandle) -> Result<Value, String> {
 
 /// 保存配置
 #[tauri::command]
-fn save_config(app_handle: tauri::AppHandle, config: Value) -> Result<(), String> {
-    let config_path = get_config_path(&app_handle);
+fn save_config(config: Value) -> Result<(), String> {
+    let config_path = get_config_path();
     
     // 确保目录存在
     if let Some(parent) = config_path.parent() {
@@ -128,7 +108,7 @@ fn save_config(app_handle: tauri::AppHandle, config: Value) -> Result<(), String
 
 /// 检查服务是否运行
 #[tauri::command]
-fn is_running(_app_handle: tauri::AppHandle) -> Result<bool, String> {
+fn is_running() -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
         let output = Command::new("tasklist")
@@ -160,21 +140,17 @@ fn is_running(_app_handle: tauri::AppHandle) -> Result<bool, String> {
 
 /// 启动服务
 #[tauri::command]
-fn start_service(app_handle: tauri::AppHandle) -> Result<(), String> {
-    let app_dir = get_app_dir(&app_handle);
-    
-    // 查找启动脚本
-    let possible_scripts = vec![
-        app_dir.parent().map(|p| p.join("start-openclaw.bat")),
-        app_dir.join("start-openclaw.bat").into(),
+fn start_service() -> Result<(), String> {
+    // 可能的启动脚本位置
+    let possible_scripts: Vec<PathBuf> = vec![
         PathBuf::from("start-openclaw.bat"),
+        PathBuf::from("start-openclaw.sh"),
     ];
     
     let start_script = possible_scripts
-        .into_iter()
-        .flatten()
+        .iter()
         .find(|p| p.exists())
-        .ok_or("找不到启动脚本 start-openclaw.bat")?;
+        .ok_or("找不到启动脚本")?;
     
     log::info!("启动脚本: {:?}", start_script);
     
@@ -192,7 +168,7 @@ fn start_service(app_handle: tauri::AppHandle) -> Result<(), String> {
     #[cfg(not(target_os = "windows"))]
     {
         Command::new("sh")
-            .arg(&start_script)
+            .arg(start_script)
             .spawn()
             .map_err(|e| {
                 log::error!("启动失败: {}", e);
@@ -206,17 +182,14 @@ fn start_service(app_handle: tauri::AppHandle) -> Result<(), String> {
 
 /// 停止服务
 #[tauri::command]
-fn stop_service(app_handle: tauri::AppHandle) -> Result<(), String> {
-    let app_dir = get_app_dir(&app_handle);
-    
-    // 查找停止脚本
-    let possible_scripts = vec![
-        app_dir.parent().map(|p| p.join("stop-openclaw.bat")),
-        app_dir.join("stop-openclaw.bat").into(),
+fn stop_service() -> Result<(), String> {
+    // 可能的停止脚本位置
+    let possible_scripts: Vec<PathBuf> = vec![
         PathBuf::from("stop-openclaw.bat"),
+        PathBuf::from("stop-openclaw.sh"),
     ];
     
-    if let Some(stop_script) = possible_scripts.into_iter().flatten().find(|p| p.exists()) {
+    if let Some(stop_script) = possible_scripts.iter().find(|p| p.exists()) {
         log::info!("停止脚本: {:?}", stop_script);
         
         #[cfg(target_os = "windows")]
@@ -233,7 +206,7 @@ fn stop_service(app_handle: tauri::AppHandle) -> Result<(), String> {
         #[cfg(not(target_os = "windows"))]
         {
             Command::new("sh")
-                .arg(&stop_script)
+                .arg(stop_script)
                 .output()
                 .map_err(|e| {
                     log::error!("停止失败: {}", e);
@@ -265,20 +238,6 @@ fn stop_service(app_handle: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// 获取应用信息（用于调试）
-#[tauri::command]
-fn get_app_info(app_handle: tauri::AppHandle) -> Result<Value, String> {
-    let config_path = get_config_path(&app_handle);
-    let resource_dir = app_handle.path_resolver().resource_dir();
-    
-    Ok(serde_json::json!({
-        "configPath": config_path.to_string_lossy(),
-        "configExists": config_path.exists(),
-        "resourceDir": resource_dir.map(|p| p.to_string_lossy().to_string()),
-        "homeDir": dirs::home_dir().map(|p| p.to_string_lossy().to_string()),
-    }))
-}
-
 fn main() {
     // 初始化日志
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
@@ -292,8 +251,7 @@ fn main() {
             save_config,
             is_running,
             start_service,
-            stop_service,
-            get_app_info
+            stop_service
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
