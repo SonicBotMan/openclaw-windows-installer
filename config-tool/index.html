@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenClaw 配置</title>
+  <!-- 防止 CSP 问题 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -25,9 +27,11 @@
     }
     .status.running { background: #d4edda; color: #155724; }
     .status.stopped { background: #f8d7da; color: #721c24; }
+    .status.error { background: #fff3cd; color: #856404; }
     .status-dot { width: 10px; height: 10px; border-radius: 50%; }
     .status.running .status-dot { background: #28a745; animation: pulse 2s infinite; }
     .status.stopped .status-dot { background: #dc3545; }
+    .status.error .status-dot { background: #ffc107; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .section { margin-bottom: 25px; }
     .section h2 { font-size: 16px; color: #333; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #eee; }
@@ -44,10 +48,11 @@
       flex: 1; padding: 12px 20px; border: none; border-radius: 8px;
       font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
     .btn-secondary { background: #f0f0f0; color: #333; }
-    .btn-secondary:hover { background: #e0e0e0; }
+    .btn-secondary:hover:not(:disabled) { background: #e0e0e0; }
     .btn-danger { background: #dc3545; color: white; }
     .btn-success { background: #28a745; color: white; }
     .toast {
@@ -58,7 +63,17 @@
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast.success { background: #28a745; }
     .toast.error { background: #dc3545; }
+    .toast.warning { background: #ffc107; color: #333; }
     .link { color: #667eea; text-decoration: none; font-size: 12px; }
+    .error-box {
+      background: #f8d7da; color: #721c24; padding: 20px;
+      border-radius: 8px; margin-bottom: 20px; text-align: center;
+    }
+    .error-box h3 { margin-bottom: 10px; }
+    .error-box code { 
+      background: #721c24; color: white; padding: 2px 6px; 
+      border-radius: 4px; font-size: 12px; 
+    }
   </style>
 </head>
 <body>
@@ -68,91 +83,135 @@
       <p>管理您的 AI 助手设置</p>
     </div>
     
-    <div id="status" class="status stopped">
-      <span class="status-dot"></span>
-      <span id="status-text">检查中...</span>
+    <!-- Tauri API 错误提示 -->
+    <div id="tauri-error" class="error-box" style="display: none;">
+      <h3>⚠️ 初始化失败</h3>
+      <p>此工具需要在 OpenClaw Config 桌面应用中运行</p>
+      <p style="margin-top: 10px; font-size: 12px;">
+        请通过桌面快捷方式 <strong>OpenClaw Config</strong> 打开
+      </p>
     </div>
     
-    <div class="section">
-      <h2>🤖 模型设置</h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label>默认模型</label>
-          <select id="defaultModel">
-            <option value="zai/glm-4-flash">GLM-4-Flash (智谱)</option>
-            <option value="zai/glm-4">GLM-4 (智谱)</option>
-            <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5 (高速)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>备用模型</label>
-          <select id="fallbackModel">
-            <option value="">无</option>
-            <option value="zai/glm-4-flash">GLM-4-Flash</option>
-            <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5</option>
-          </select>
-        </div>
+    <div id="main-content" style="display: none;">
+      <div id="status" class="status stopped">
+        <span class="status-dot"></span>
+        <span id="status-text">检查中...</span>
       </div>
-    </div>
-    
-    <div class="section">
-      <h2>🔑 GLM (智谱) API</h2>
-      <div class="form-group">
-        <label>API Key</label>
-        <input type="password" id="zaiApiKey" placeholder="请输入智谱 API Key">
-      </div>
-      <div class="form-group">
-        <label>API 地址</label>
-        <input type="text" id="zaiBaseUrl" value="https://open.bigmodel.cn/api/paas/v4">
-      </div>
-    </div>
-    
-    <div class="section">
-      <h2>🔑 MiniMax API</h2>
-      <div class="form-group">
-        <label>API Key</label>
-        <input type="password" id="minimaxApiKey" placeholder="请输入 MiniMax API Key">
-      </div>
-      <div class="form-group">
-        <label>API 地址</label>
-        <input type="text" id="minimaxBaseUrl" value="https://api.minimax.chat/v1">
-      </div>
-    </div>
-    
-    <div class="section">
-      <h2>🌐 服务设置</h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label>端口</label>
-          <input type="number" id="gatewayPort" value="18789">
-        </div>
-        <div class="form-group">
-          <label>绑定地址</label>
-          <input type="text" id="gatewayBind" value="127.0.0.1">
+      
+      <div class="section">
+        <h2>🤖 模型设置</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>默认模型</label>
+            <select id="defaultModel">
+              <option value="zai/glm-4-flash">GLM-4-Flash (智谱)</option>
+              <option value="zai/glm-4">GLM-4 (智谱)</option>
+              <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5 (高速)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>备用模型</label>
+            <select id="fallbackModel">
+              <option value="">无</option>
+              <option value="zai/glm-4-flash">GLM-4-Flash</option>
+              <option value="minimax/MiniMax-M2.5-highspeed">MiniMax-M2.5</option>
+            </select>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div class="btn-group">
-      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
-      <button class="btn btn-secondary" onclick="openWeb()">🌐 打开网页</button>
-    </div>
-    
-    <div class="btn-group">
-      <button class="btn btn-success" id="startBtn" onclick="startService()">▶️ 启动服务</button>
-      <button class="btn btn-danger" id="stopBtn" onclick="stopService()">⏹️ 停止服务</button>
+      
+      <div class="section">
+        <h2>🔑 GLM (智谱) API</h2>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="password" id="zaiApiKey" placeholder="请输入智谱 API Key">
+        </div>
+        <div class="form-group">
+          <label>API 地址</label>
+          <input type="text" id="zaiBaseUrl" value="https://open.bigmodel.cn/api/paas/v4">
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2>🔑 MiniMax API</h2>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="password" id="minimaxApiKey" placeholder="请输入 MiniMax API Key">
+        </div>
+        <div class="form-group">
+          <label>API 地址</label>
+          <input type="text" id="minimaxBaseUrl" value="https://api.minimax.chat/v1">
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2>🌐 服务设置</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>端口</label>
+            <input type="number" id="gatewayPort" value="18789">
+          </div>
+          <div class="form-group">
+            <label>绑定地址</label>
+            <input type="text" id="gatewayBind" value="127.0.0.1">
+          </div>
+        </div>
+      </div>
+      
+      <div class="btn-group">
+        <button class="btn btn-primary" id="saveBtn" onclick="saveConfig()">💾 保存配置</button>
+        <button class="btn btn-secondary" onclick="openWeb()">🌐 打开网页</button>
+      </div>
+      
+      <div class="btn-group">
+        <button class="btn btn-success" id="startBtn" onclick="startService()">▶️ 启动服务</button>
+        <button class="btn btn-danger" id="stopBtn" onclick="stopService()">⏹️ 停止服务</button>
+      </div>
     </div>
   </div>
   
   <div id="toast" class="toast"></div>
   
   <script>
-    // Tauri invoke 包装器
-    function tauriInvoke(cmd, args) {
-      if (!window.__TAURI__ || !window.__TAURI__.tauri) {
-        return Promise.reject(new Error('Tauri API 未初始化，请在 Tauri 应用中使用'));
+    // Tauri API 状态
+    let tauriReady = false;
+    let invoke = null;
+    
+    // 检查 Tauri API 是否可用
+    function checkTauriAPI() {
+      // Tauri v1 API 路径
+      if (window.__TAURI__ && window.__TAURI__.tauri && window.__TAURI__.tauri.invoke) {
+        invoke = window.__TAURI__.tauri.invoke;
+        tauriReady = true;
+        return true;
       }
-      return window.__TAURI__.tauri.invoke(cmd, args);
+      
+      // Tauri v2 API 路径（兼容）
+      if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
+        invoke = window.__TAURI__.core.invoke;
+        tauriReady = true;
+        return true;
+      }
+      
+      return false;
+    }
+    
+    // Tauri invoke 包装器
+    async function tauriInvoke(cmd, args) {
+      if (!tauriReady || !invoke) {
+        throw new Error('Tauri API 未初始化，请通过 OpenClaw Config 桌面应用打开');
+      }
+      
+      try {
+        if (args) {
+          return await invoke(cmd, args);
+        } else {
+          return await invoke(cmd);
+        }
+      } catch (e) {
+        console.error('Tauri invoke error:', e);
+        throw e;
+      }
     }
     
     // 加载配置
@@ -167,13 +226,19 @@
         document.getElementById('fallbackModel').value = config.agents?.defaults?.fallbacks?.[0] || '';
         document.getElementById('gatewayPort').value = config.gateway?.port || 18789;
         document.getElementById('gatewayBind').value = config.gateway?.bind || '127.0.0.1';
+        showToast('配置已加载', 'success');
       } catch (e) {
-        showToast('加载配置失败: ' + e, 'error');
+        console.error('加载配置失败:', e);
+        showToast('加载配置失败: ' + e.message, 'warning');
       }
     }
     
     // 保存配置
     async function saveConfig() {
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = '⏳ 保存中...';
+      
       const config = {
         providers: {
           zai: {
@@ -194,21 +259,27 @@
           }
         },
         gateway: {
-          port: parseInt(document.getElementById('gatewayPort').value),
-          bind: document.getElementById('gatewayBind').value
+          port: parseInt(document.getElementById('gatewayPort').value) || 18789,
+          bind: document.getElementById('gatewayBind').value || '127.0.0.1'
         }
       };
       
       try {
         await tauriInvoke('save_config', { config });
-        showToast('配置已保存 ✓', 'success');
+        showToast('✅ 配置已保存', 'success');
       } catch (e) {
-        showToast('保存失败: ' + e, 'error');
+        console.error('保存失败:', e);
+        showToast('❌ 保存失败: ' + e.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 保存配置';
       }
     }
     
     // 检查服务状态
     async function checkStatus() {
+      if (!tauriReady) return;
+      
       try {
         const running = await tauriInvoke('is_running');
         const statusEl = document.getElementById('status');
@@ -216,12 +287,12 @@
         
         if (running) {
           statusEl.className = 'status running';
-          statusText.textContent = 'OpenClaw 运行中';
+          statusText.textContent = '✅ OpenClaw 运行中';
           document.getElementById('startBtn').disabled = true;
           document.getElementById('stopBtn').disabled = false;
         } else {
           statusEl.className = 'status stopped';
-          statusText.textContent = 'OpenClaw 已停止';
+          statusText.textContent = '⏹️ OpenClaw 已停止';
           document.getElementById('startBtn').disabled = false;
           document.getElementById('stopBtn').disabled = true;
         }
@@ -232,30 +303,49 @@
     
     // 启动服务
     async function startService() {
+      const startBtn = document.getElementById('startBtn');
+      startBtn.disabled = true;
+      startBtn.textContent = '⏳ 启动中...';
+      
       try {
         await tauriInvoke('start_service');
-        showToast('服务已启动 ✓', 'success');
+        showToast('✅ 服务已启动', 'success');
         setTimeout(checkStatus, 2000);
       } catch (e) {
-        showToast('启动失败: ' + e, 'error');
+        console.error('启动失败:', e);
+        showToast('❌ 启动失败: ' + e.message, 'error');
+        startBtn.disabled = false;
+        startBtn.textContent = '▶️ 启动服务';
       }
     }
     
     // 停止服务
     async function stopService() {
+      const stopBtn = document.getElementById('stopBtn');
+      stopBtn.disabled = true;
+      stopBtn.textContent = '⏳ 停止中...';
+      
       try {
         await tauriInvoke('stop_service');
-        showToast('服务已停止', 'success');
+        showToast('✅ 服务已停止', 'success');
         setTimeout(checkStatus, 1000);
       } catch (e) {
-        showToast('停止失败: ' + e, 'error');
+        console.error('停止失败:', e);
+        showToast('❌ 停止失败: ' + e.message, 'error');
+        stopBtn.disabled = false;
+        stopBtn.textContent = '⏹️ 停止服务';
       }
     }
     
     // 打开网页
     function openWeb() {
-      const port = document.getElementById('gatewayPort').value;
-      window.open(`http://localhost:${port}`, '_blank');
+      const port = document.getElementById('gatewayPort').value || 18789;
+      // 使用 Tauri shell.open 如果可用
+      if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
+        window.__TAURI__.shell.open(`http://localhost:${port}`);
+      } else {
+        window.open(`http://localhost:${port}`, '_blank');
+      }
     }
     
     // 显示提示
@@ -268,9 +358,21 @@
     
     // 初始化
     window.addEventListener('DOMContentLoaded', () => {
-      loadConfig();
-      checkStatus();
-      setInterval(checkStatus, 10000);
+      // 延迟检查 Tauri API（给 Tauri 时间注入）
+      setTimeout(() => {
+        if (checkTauriAPI()) {
+          console.log('Tauri API 已就绪');
+          document.getElementById('main-content').style.display = 'block';
+          document.getElementById('tauri-error').style.display = 'none';
+          loadConfig();
+          checkStatus();
+          setInterval(checkStatus, 10000);
+        } else {
+          console.error('Tauri API 不可用');
+          document.getElementById('tauri-error').style.display = 'block';
+          document.getElementById('main-content').style.display = 'none';
+        }
+      }, 100); // 给 Tauri 100ms 时间初始化
     });
   </script>
 </body>
